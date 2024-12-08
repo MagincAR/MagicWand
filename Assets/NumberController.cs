@@ -6,6 +6,7 @@ using UnityEngine.XR.ARFoundation; // AR 관련 클래스 사용
 public class NumberController : MonoBehaviour
 {
     public GameObject flameThrower; // FlameThrower 오브젝트
+    public GameObject lightObject; // 빛 오브젝트
     public GameObject wandObject; // Wand 오브젝트
     public GameObject pointCloudManager; // PointCloudManager 오브젝트
     public GameObject glowingObjectPrefab; // 파란색 빛나는 오브젝트 프리팹
@@ -26,44 +27,35 @@ public class NumberController : MonoBehaviour
     private Coroutine generateObjectsCoroutine; // 코루틴 제어를 위한 변수
 
     // AR Face 관련 변수
-    private GameObject userFacingCamera; // 동적으로 생성한 User-Facing 카메라
-    public GameObject arFaceManagerObject; // AR Face Manager가 포함된 GameObject
+    // private GameObject userFacingCamera; // 동적으로 생성한 User-Facing 카메라
+    // public GameObject arFaceManagerObject; // AR Face Manager가 포함된 GameObject
     //private ARCameraManager arCameraManager; // ARCameraManager
-    private Unity.XR.CoreUtils.XROrigin xrOrigin; // XROrigin (기존 ARSessionOrigin 대신)
+    // private Unity.XR.CoreUtils.XROrigin xrOrigin; // XROrigin (기존 ARSessionOrigin 대신)
 
-    private bool isARFaceTrackingActive = false; // AR Face Tracking 상태
+    // private bool isARFaceTrackingActive = false; // AR Face Tracking 상태
 
+    // AR Camera Manager 참조
+    private ARCameraManager arCameraManager;
+    private Light sceneLight; // 장면에 있는 조명
 
     void Start()
     {
         mainCamera = Camera.main.transform; // 메인 카메라의 Transform 참조
-        xrOrigin = GetComponent<Unity.XR.CoreUtils.XROrigin>(); // XROrigin 참조
-
+        //xrOrigin = GetComponent<Unity.XR.CoreUtils.XROrigin>(); // XROrigin 참조
+        
         // 초기화
         if (flameThrower != null) flameThrower.SetActive(false);
         if (pointCloudManager != null) pointCloudManager.SetActive(false);
-        if (arFaceManagerObject != null) arFaceManagerObject.SetActive(false);
+        if (lightObject != null) lightObject.SetActive(false);
 
         // 버튼 이벤트 연결
         button1.onClick.AddListener(() => OnButton1Click());
         button2.onClick.AddListener(() => OnButton2Click());
         button3.onClick.AddListener(() => OnButton3Click());
         button4.onClick.AddListener(() => OnButton4Click());
+
     }
-    void Update()
-    {
-        if (isARFaceTrackingActive)
-        {
-            // 얼굴 추적이 활성화된 경우에만 실행되는 코드
-            // 예를 들어, AR face tracking을 기반으로 특정 애니메이션이나 효과를 실행
-            Debug.Log("AR Face Tracking is active, performing specific actions.");
-        }
-        else
-        {
-            // AR face tracking이 비활성화되었을 때 다른 작업 수행
-            Debug.Log("AR Face Tracking is inactive, performing default actions.");
-        }
-    }
+
 
     void OnButton1Click()
     {
@@ -72,6 +64,7 @@ public class NumberController : MonoBehaviour
         // 기존 기능 비활성화
         DisableAll();
 
+        /*
         // 기존 메인 카메라 비활성화
         if (mainCamera != null)
         {
@@ -94,14 +87,37 @@ public class NumberController : MonoBehaviour
             var arCameraManager = userFacingCamera.AddComponent<ARCameraManager>();
      
         }
+        */
         // AR 얼굴 추적이 활성화되었을 때 UI 버튼을 비활성화
         button1.interactable = false;
     }
+
+    private void OnCameraFrameReceived(ARCameraFrameEventArgs args)
+{
+    // ARCameraFrameEventArgs에서 lightEstimation 정보를 가져오기
+    if (args.lightEstimation.averageBrightness.HasValue)
+    {
+        float averageBrightness = args.lightEstimation.averageBrightness.Value;
+        Debug.Log("현재 조명 밝기: " + averageBrightness);
+
+        // 예제: 조명 밝기 값으로 씬의 조명 강도 조정
+        if (sceneLight != null)
+        {
+            sceneLight.intensity = Mathf.Clamp(averageBrightness, 0.1f, 2f); // 밝기 값을 적절히 조정
+        }
+    }
+}
 
     void OnButton2Click()
     {
         Debug.Log("2번 버튼 클릭");
         DisableAll();
+
+        if (lightObject != null)
+        {
+            lightObject.SetActive(true);
+        }
+       
     }
 
     void OnButton3Click()
@@ -130,18 +146,22 @@ public class NumberController : MonoBehaviour
         button3.interactable = true;
         button4.interactable = true;
         // AR Face Manager 비활성화 (AR Face Tracking을 끔)
+        /*
         ARFaceManager arFaceManager = arFaceManagerObject.GetComponent<ARFaceManager>();
         if (arFaceManager != null)
         {
             arFaceManager.enabled = false; // ARFaceManager 비활성화
         }
-
+        
         // 카메라 회전 초기화 (world 기준으로 돌아가게 설정)
         if (xrOrigin != null)
         {
             // 카메라를 world 기준 회전으로 설정 (Quaternion.identity)
             xrOrigin.transform.rotation = Quaternion.identity; // world 기준으로 회전 초기화
         }
+        */
+        
+
         // 모든 폭포 제거
         foreach (var waterfall in waterfalls)
         {
@@ -159,7 +179,8 @@ public class NumberController : MonoBehaviour
         // FlameThrower 및 PointCloudManager 비활성화
         if (flameThrower != null) flameThrower.SetActive(false);
         if (pointCloudManager != null) pointCloudManager.SetActive(false);
-        if (arFaceManagerObject != null) arFaceManagerObject.SetActive(false);
+        if (lightObject != null) lightObject.SetActive(false);
+        //if (arFaceManagerObject != null) arFaceManagerObject.SetActive(false);
 
         // 파란색 오브젝트 생성 코루틴 중지
         if (generateObjectsCoroutine != null)
@@ -184,6 +205,7 @@ public class NumberController : MonoBehaviour
             yield return new WaitForSeconds(checkInterval);
         }
     }
+
 
     public void SpawnWaterfall(Vector3 position, GameObject glowingObject)
     {
