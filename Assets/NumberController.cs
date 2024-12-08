@@ -13,6 +13,14 @@ public class NumberController : MonoBehaviour
     public GameObject waterfallPrefab; // 폭포 파티클 프리팹
 
 
+    [SerializeField] private ARFaceManager arFaceManager; // ARFaceManager 컴포넌트
+    //[SerializeField] private Material[] materials;
+    //[SerializeField] private int switchIndex = 0;
+
+
+    private bool isFaceTrackingEnabled = false;          // Face Tracking 상태
+    private ARCameraManager arCameraManager; // ARCameraManager를 참조할 변수
+
 
     public Button button1;
     public Button button2;
@@ -26,27 +34,25 @@ public class NumberController : MonoBehaviour
     private Transform mainCamera;
     private Coroutine generateObjectsCoroutine; // 코루틴 제어를 위한 변수
 
-    // AR Face 관련 변수
-    // private GameObject userFacingCamera; // 동적으로 생성한 User-Facing 카메라
-    // public GameObject arFaceManagerObject; // AR Face Manager가 포함된 GameObject
-    //private ARCameraManager arCameraManager; // ARCameraManager
-    // private Unity.XR.CoreUtils.XROrigin xrOrigin; // XROrigin (기존 ARSessionOrigin 대신)
-
-    // private bool isARFaceTrackingActive = false; // AR Face Tracking 상태
-
-    // AR Camera Manager 참조
-    private ARCameraManager arCameraManager;
-    private Light sceneLight; // 장면에 있는 조명
 
     void Start()
     {
         mainCamera = Camera.main.transform; // 메인 카메라의 Transform 참조
-        //xrOrigin = GetComponent<Unity.XR.CoreUtils.XROrigin>(); // XROrigin 참조
+        arCameraManager = FindObjectOfType<ARCameraManager>();
+        arFaceManager = FindObjectOfType<ARFaceManager>();
         
+
         // 초기화
         if (flameThrower != null) flameThrower.SetActive(false);
         if (pointCloudManager != null) pointCloudManager.SetActive(false);
         if (lightObject != null) lightObject.SetActive(false);
+        // 초기 상태 설정
+        if (arFaceManager != null)
+        {
+            arFaceManager.enabled = isFaceTrackingEnabled;
+           // arFaceManager.facePrefab.GetComponent<MeshRenderer>().material = materials[0];
+
+        }
 
         // 버튼 이벤트 연결
         button1.onClick.AddListener(() => OnButton1Click());
@@ -64,49 +70,95 @@ public class NumberController : MonoBehaviour
         // 기존 기능 비활성화
         DisableAll();
 
-        /*
-        // 기존 메인 카메라 비활성화
-        if (mainCamera != null)
-        {
-            mainCamera.gameObject.SetActive(false);
-        }
+        if (arFaceManager == null) return;
 
-        // User-Facing 카메라 생성
-        if (userFacingCamera = null)
-        {
-            userFacingCamera = new GameObject("UserFacingCamera");
-            Camera newCamera = userFacingCamera.AddComponent<Camera>();
+        isFaceTrackingEnabled = !isFaceTrackingEnabled; // 상태 변경
+        arFaceManager.enabled = isFaceTrackingEnabled; // ARFaceManager 활성화/비활성화
+        Debug.Log($"Face Tracking is now {(isFaceTrackingEnabled ? "Enabled" : "Disabled")}");
 
-            // 카메라 기본 설정
-            newCamera.clearFlags = CameraClearFlags.Skybox;
-            newCamera.fieldOfView = 60f;
-            newCamera.nearClipPlane = 0.1f;
-            newCamera.farClipPlane = 100f;
-
-            // AR 환경에 맞게 user-facing 카메라로 설정
-            var arCameraManager = userFacingCamera.AddComponent<ARCameraManager>();
-     
-        }
-        */
+       // StartCoroutine(SwitchCamera());
+    
         // AR 얼굴 추적이 활성화되었을 때 UI 버튼을 비활성화
         button1.interactable = false;
+
     }
-
-    private void OnCameraFrameReceived(ARCameraFrameEventArgs args)
+    
+    /*
+     * private void FaceMaterialSwitch()
 {
-    // ARCameraFrameEventArgs에서 lightEstimation 정보를 가져오기
-    if (args.lightEstimation.averageBrightness.HasValue)
-    {
-        float averageBrightness = args.lightEstimation.averageBrightness.Value;
-        Debug.Log("현재 조명 밝기: " + averageBrightness);
+    Debug.Log("FaceMaterialSwitch 호출됨");
 
-        // 예제: 조명 밝기 값으로 씬의 조명 강도 조정
-        if (sceneLight != null)
+    if (arFaceManager != null)
+    {
+        Debug.Log($"트래킹된 얼굴 개수: {arFaceManager.trackables.count}");
+
+        if (arFaceManager.trackables.count > 0)
         {
-            sceneLight.intensity = Mathf.Clamp(averageBrightness, 0.1f, 2f); // 밝기 값을 적절히 조정
+            // 현재 materials 배열의 길이를 로그로 출력
+            Debug.Log($"materials 배열의 길이: {materials.Length}");
+
+            // 배열의 길이에 맞게 switchIndex 조정
+            switchIndex = (switchIndex + 1) % materials.Length;
+            Debug.Log($"새로운 메테리얼 인덱스: {switchIndex}");
+
+            foreach (ARFace face in arFaceManager.trackables)
+            {
+                if (face != null && face.GetComponent<MeshRenderer>() != null)
+                {
+                    Debug.Log($"현재 메테리얼: {face.GetComponent<MeshRenderer>().material.name}");
+
+                    // 메테리얼 변경
+                    face.GetComponent<MeshRenderer>().material = materials[switchIndex];
+
+                    Debug.Log($"새 메테리얼 적용됨: {face.GetComponent<MeshRenderer>().material.name}");
+                }
+                else
+                {
+                    Debug.LogWarning("얼굴 또는 MeshRenderer가 null입니다.");
+                }
+            }
+        }
+        else
+        {
+            Debug.LogWarning("트래킹된 얼굴이 없습니다.");
         }
     }
+    else
+    {
+        Debug.LogError("ARFaceManager가 null입니다.");
+    }
 }
+
+
+private void Update()
+{
+    if(isFaceTrackingEnabled == true)
+    {
+        if(Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
+        {
+            FaceMaterialSwitch();
+        }
+
+    }
+}
+    */
+    IEnumerator SwitchCamera()
+    {
+        // 두 프레임을 건너뛰기 위해 대기
+        yield return null;
+        yield return null;
+
+        // 카메라의 facing direction을 World로 변경
+        if (arCameraManager != null)
+        {
+            arCameraManager.requestedFacingDirection = CameraFacingDirection.User;
+            Debug.Log("카메라 방향을 User로 변경했습니다.");
+        }
+        else
+        {
+            Debug.LogError("ARCameraManager가 할당되지 않았습니다.");
+        }
+    }
 
     void OnButton2Click()
     {
@@ -160,10 +212,20 @@ public class NumberController : MonoBehaviour
             xrOrigin.transform.rotation = Quaternion.identity; // world 기준으로 회전 초기화
         }
         */
-        
+        // 카메라의 facing direction을 World로 변경
+        //switchIndex = 0;
+        if (arCameraManager != null)
+        {
+            arCameraManager.requestedFacingDirection = CameraFacingDirection.World;
+            Debug.Log("카메라 방향을 World로 변경했습니다.");
+        }
+        else
+        {
+            Debug.LogError("ARCameraManager가 할당되지 않았습니다.");
+        }
 
-        // 모든 폭포 제거
-        foreach (var waterfall in waterfalls)
+            // 모든 폭포 제거
+            foreach (var waterfall in waterfalls)
         {
             Destroy(waterfall);
         }
@@ -180,6 +242,11 @@ public class NumberController : MonoBehaviour
         if (flameThrower != null) flameThrower.SetActive(false);
         if (pointCloudManager != null) pointCloudManager.SetActive(false);
         if (lightObject != null) lightObject.SetActive(false);
+        // 초기 상태 설정
+        if (arFaceManager != null)
+        {
+            arFaceManager.enabled = isFaceTrackingEnabled;
+        }
         //if (arFaceManagerObject != null) arFaceManagerObject.SetActive(false);
 
         // 파란색 오브젝트 생성 코루틴 중지
@@ -205,9 +272,9 @@ public class NumberController : MonoBehaviour
             yield return new WaitForSeconds(checkInterval);
         }
     }
+ 
 
-
-    public void SpawnWaterfall(Vector3 position, GameObject glowingObject)
+        public void SpawnWaterfall(Vector3 position, GameObject glowingObject)
     {
         // 폭포 생성
         GameObject waterfall = Instantiate(waterfallPrefab, position, Quaternion.identity);
