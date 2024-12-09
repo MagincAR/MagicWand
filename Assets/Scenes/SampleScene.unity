@@ -663,13 +663,17 @@ MonoBehaviour:
     type: 3}
   waterfallPrefab: {fileID: 8724604759503386187, guid: 19b99f2088be7b3439e96338a0a54e7e,
     type: 3}
-  arFaceManager: {fileID: 0}
-  materials: []
-  switchIndex: 0
+  materials:
+  - {fileID: 2630349724537830605, guid: 96e2bc83624ab4ec0b4a9974caf7a9d1, type: 3}
+  - {fileID: 5981380655717044251, guid: 3540134fba284494aa745c75b3967871, type: 3}
+  - {fileID: 1682593054194990011, guid: 9b479d6c09bd64a2e8c2521b8cd1d516, type: 3}
+  - {fileID: 2518258288222798884, guid: 109b89959e9e44f08a578ea27c235f50, type: 3}
   button1: {fileID: 1377512293}
   button2: {fileID: 645274435}
   button3: {fileID: 251441699}
   button4: {fileID: 1143038364}
+  arFaceManager: {fileID: 1571486784}
+  xrOrigin: {fileID: 1571486782}
 --- !u!1 &480372116
 GameObject:
   m_ObjectHideFlags: 0
