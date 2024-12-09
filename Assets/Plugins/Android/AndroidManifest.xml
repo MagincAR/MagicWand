@@ -3,11 +3,10 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.unity3d.player"
     xmlns:tools="http://schemas.android.com/tools">
-	<!-- Add camera permission -->
-    <uses-permission android:name="android.permission.CAMERA" />
+	<uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" />
+    <uses-feature android:name="android.hardware.camera.autofocus" />
 
-    <!-- If you're using the camera for recording video, add this permission too -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <application>
         <activity android:name="com.unity3d.player.UnityPlayerActivity"
                   android:theme="@style/UnityThemeSelector">

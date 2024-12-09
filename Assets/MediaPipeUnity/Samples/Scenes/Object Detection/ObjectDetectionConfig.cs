@@ -44,7 +44,7 @@ namespace Mediapipe.Unity.Sample.ObjectDetection
     Tasks.Core.BaseOptions.Delegate.GPU;
 #endif
 
-    public ModelType Model { get; set; } = ModelType.EfficientDetLite0Float16;
+    public ModelType Model { get; set; } = ModelType.EfficientDetLite0Float32;
 
     public Tasks.Vision.Core.RunningMode RunningMode { get; set; } = Tasks.Vision.Core.RunningMode.LIVE_STREAM;
 
@@ -62,7 +62,7 @@ namespace Mediapipe.Unity.Sample.ObjectDetection
           case ModelType.EfficientDetLite0Float16:
             return "efficientdet_lite0_float16.bytes";
           case ModelType.EfficientDetLite0Float32:
-            return "efficientdet_lite0_float32.bytes";
+            return "efficientdet_lite0_float32.bytes"; // 기본모델 설정
           case ModelType.EfficientDetLite0Int8:
             return "efficientdet_lite0_int8.bytes";
           case ModelType.EfficientDetLite2Float16:

@@ -1,11 +1,12 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement; // 씬 전환을 위한 네임스페이스 추가
+using System.Collections.Generic;
+using System.Collections;
 
 public class NumberController : MonoBehaviour
 {
-    public GameObject flameThrower; // FlameThrower 오브젝트
+    public GameObject flameThrowerPrefab; // FlameThrower 프리팹
     public GameObject wandObject; // Wand 오브젝트
     public GameObject pointCloudManager; // PointCloudManager 오브젝트
     public GameObject glowingObjectPrefab; // 파란색 빛나는 오브젝트 프리팹
@@ -22,13 +23,17 @@ public class NumberController : MonoBehaviour
     private float checkInterval = 0.5f; // 주기적으로 카메라 위치를 체크하는 간격
     private Transform mainCamera;
     private Coroutine generateObjectsCoroutine; // 코루틴 제어를 위한 변수
+    private GameObject currentFlameThrower; // 현재 생성된 FlameThrower
+    private Vector3 flamePosition; // FlameThrower의 위치 (지팡이 끝)
+
+    private float circleRadius = 1f; // 원의 반지름
+    private int circleSegments = 30; // 원의 세그먼트 개수 (세밀도 조절)
 
     void Start()
     {
         mainCamera = Camera.main.transform; // 메인 카메라의 Transform 참조
 
         // 초기화
-        if (flameThrower != null) flameThrower.SetActive(false);
         if (pointCloudManager != null) pointCloudManager.SetActive(false);
 
         // 버튼 이벤트 연결
@@ -64,10 +69,28 @@ public class NumberController : MonoBehaviour
 
     void OnButton4Click()
     {
-        Debug.Log("4번 버튼 클릭: FlameThrower 활성화");
+        Debug.Log("4번 버튼 클릭: test 씬으로 이동");
         DisableAll();
-        if (flameThrower != null) flameThrower.SetActive(true);
+
+        // test 씬으로 전환
+        SceneManager.LoadScene("test");
     }
+
+    
+    // 불 효과를 생성하는 메서드
+    private void SpawnFireEffect(Vector3 position)
+    {
+        // 불 효과 프리팹을 해당 위치에 인스턴스화
+        if (flameThrowerPrefab != null)
+        {
+            GameObject fireEffect = Instantiate(flameThrowerPrefab, position, Quaternion.identity);
+        }
+        else
+        {
+            Debug.LogError("FireEffect prefab is not assigned!");
+        }
+    }
+
 
     void DisableAll()
     {
@@ -86,7 +109,12 @@ public class NumberController : MonoBehaviour
         glowingObjects.Clear();
 
         // FlameThrower 및 PointCloudManager 비활성화
-        if (flameThrower != null) flameThrower.SetActive(false);
+        if (currentFlameThrower != null)
+        {
+            Destroy(currentFlameThrower);
+            currentFlameThrower = null;
+        }
+
         if (pointCloudManager != null) pointCloudManager.SetActive(false);
 
         // 파란색 오브젝트 생성 코루틴 중지
@@ -105,14 +133,15 @@ public class NumberController : MonoBehaviour
             Vector3 spawnPosition = mainCamera.position + mainCamera.forward * randomOffset.z + mainCamera.right * randomOffset.x + mainCamera.up * randomOffset.y;
 
             GameObject glowingObject = Instantiate(glowingObjectPrefab, spawnPosition, Quaternion.identity);
-            glowingObject.AddComponent<GlowingObjectInteraction>().Initialize(this); // 클릭 이벤트 추가
+
+            // GlowingObjectInteraction을 초기화할 때 NumberController 전달
+            glowingObject.AddComponent<GlowingObjectInteraction>().Initialize(this);
             glowingObjects.Add(glowingObject);
 
             // 주기적으로 체크
             yield return new WaitForSeconds(checkInterval);
         }
     }
-
     public void SpawnWaterfall(Vector3 position, GameObject glowingObject)
     {
         // 폭포 생성
