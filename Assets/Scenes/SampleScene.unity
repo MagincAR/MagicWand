@@ -674,6 +674,7 @@ MonoBehaviour:
   button4: {fileID: 1143038364}
   arFaceManager: {fileID: 1571486784}
   xrOrigin: {fileID: 1571486782}
+  arCameraManager: {fileID: 188148739}
 --- !u!1 &480372116
 GameObject:
   m_ObjectHideFlags: 0

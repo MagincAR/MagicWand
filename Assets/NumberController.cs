@@ -26,11 +26,13 @@ public class NumberController : MonoBehaviour
     public Button button3;
     public Button button4;
 
+    [Header("AR Components")]
     [SerializeField] private ARFaceManager arFaceManager; // ARFaceManager 컴포넌트
     [SerializeField] private XROrigin xrOrigin; //ARSession 컴포넌트
+    [SerializeField]private ARCameraManager arCameraManager; // ARCameraManager를 참조할 변수
 
     private bool isFaceTrackingEnabled = false;          // Face Tracking 상태
-    private ARCameraManager arCameraManager; // ARCameraManager를 참조할 변수
+   
     private GameObject flowerObject;
     private NativeArray<ARCoreFaceRegionData> faceRegions;
 
@@ -45,8 +47,6 @@ public class NumberController : MonoBehaviour
     void Start()
     {
         mainCamera = Camera.main.transform; // 메인 카메라의 Transform 참조
-        arCameraManager = FindObjectOfType<ARCameraManager>();
-
 
         // 초기화
         if (flameThrower != null) flameThrower.SetActive(false);
@@ -221,8 +221,13 @@ public class NumberController : MonoBehaviour
             Debug.LogError("ARCameraManager가 할당되지 않았습니다.");
         }
 
-            // 모든 폭포 제거
-            foreach (var waterfall in waterfalls)
+        if (flowerObject != null)
+        {
+            Destroy(flowerObject);
+        }
+
+        // 모든 폭포 제거
+        foreach (var waterfall in waterfalls)
         {
             Destroy(waterfall);
         }
