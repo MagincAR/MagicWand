@@ -25,13 +25,19 @@ public class NumberController : MonoBehaviour
     public Button button2;
     public Button button3;
     public Button button4;
+    public GameObject text1;
+    public GameObject text2;
+    public GameObject text3;
+    public GameObject text4;
+
+    [Header("StartMenu")]
+    [SerializeField] private GameObject Panel;
 
     [Header("AR Components")]
     [SerializeField] private ARFaceManager arFaceManager; // ARFaceManager 컴포넌트
     [SerializeField] private XROrigin xrOrigin; //ARSession 컴포넌트
     [SerializeField]private ARCameraManager arCameraManager; // ARCameraManager를 참조할 변수
-
-    private bool isFaceTrackingEnabled = false;          // Face Tracking 상태
+    private bool isTracking = false;
    
     private GameObject flowerObject;
     private NativeArray<ARCoreFaceRegionData> faceRegions;
@@ -53,7 +59,7 @@ public class NumberController : MonoBehaviour
         if (pointCloudManager != null) pointCloudManager.SetActive(false);
         if (lightObject != null) lightObject.SetActive(false);
         // 초기 상태 설정
-        if (arFaceManager != null) {arFaceManager.enabled = isFaceTrackingEnabled;}
+        if (arFaceManager != null) {arFaceManager.enabled = isTracking; }
         // 버튼 이벤트 연결
         button1.onClick.AddListener(() => OnButton1Click());
         button2.onClick.AddListener(() => OnButton2Click());
@@ -63,8 +69,8 @@ public class NumberController : MonoBehaviour
     }
     private void Update()
     {
-        var beforeIndex = switchIndex; 
-        if (arFaceManager == null || materials == null || materials.Length == 0) return;
+        var beforeIndex = switchIndex;
+        if (isTracking==false || arFaceManager == null || materials == null || materials.Length == 0) return;
 
         if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
         {
@@ -128,15 +134,16 @@ public class NumberController : MonoBehaviour
 
         if (arFaceManager == null) return;
 
-        isFaceTrackingEnabled = !isFaceTrackingEnabled; // 상태 변경
-        arFaceManager.enabled = isFaceTrackingEnabled; // ARFaceManager 활성화/비활성화
-        Debug.Log($"Face Tracking is now {(isFaceTrackingEnabled ? "Enabled" : "Disabled")}");
+        isTracking = true;
+
+        arFaceManager.enabled = isTracking; // ARFaceManager 활성화
 
         StartCoroutine(SwitchCamera());
-    
+
         // AR 얼굴 추적이 활성화되었을 때 UI 버튼을 비활성화
         button1.interactable = false;
 
+        text1.SetActive(true);
     }
   
     IEnumerator SwitchCamera()
@@ -166,7 +173,9 @@ public class NumberController : MonoBehaviour
         {
             lightObject.SetActive(true);
         }
-       
+        button2.interactable = false;
+
+        text2.SetActive(true);
     }
 
     void OnButton3Click()
@@ -179,6 +188,9 @@ public class NumberController : MonoBehaviour
         {
             generateObjectsCoroutine = StartCoroutine(GenerateGlowingObjectsAroundCamera());
         }
+        button3.interactable = false;
+
+        text3.SetActive(true);
     }
 
     void OnButton4Click()
@@ -186,6 +198,9 @@ public class NumberController : MonoBehaviour
         Debug.Log("4번 버튼 클릭: FlameThrower 활성화");
         DisableAll();
         if (flameThrower != null) flameThrower.SetActive(true);
+        button4.interactable = false;
+
+        text4.SetActive(true);
     }
 
     void DisableAll()
@@ -194,23 +209,12 @@ public class NumberController : MonoBehaviour
         button2.interactable = true; // 예시로 다른 버튼을 활성화
         button3.interactable = true;
         button4.interactable = true;
-        // AR Face Manager 비활성화 (AR Face Tracking을 끔)
-        /*
-        ARFaceManager arFaceManager = arFaceManagerObject.GetComponent<ARFaceManager>();
-        if (arFaceManager != null)
-        {
-            arFaceManager.enabled = false; // ARFaceManager 비활성화
-        }
-        
-        // 카메라 회전 초기화 (world 기준으로 돌아가게 설정)
-        if (xrOrigin != null)
-        {
-            // 카메라를 world 기준 회전으로 설정 (Quaternion.identity)
-            xrOrigin.transform.rotation = Quaternion.identity; // world 기준으로 회전 초기화
-        }
-        */
-        // 카메라의 facing direction을 World로 변경
-        //switchIndex = 0;
+
+        text1.SetActive(false);
+        text2.SetActive(false);
+        text3.SetActive(false);
+        text4.SetActive(false);
+
         if (arCameraManager != null)
         {
             arCameraManager.requestedFacingDirection = CameraFacingDirection.World;
@@ -220,10 +224,15 @@ public class NumberController : MonoBehaviour
         {
             Debug.LogError("ARCameraManager가 할당되지 않았습니다.");
         }
-
+        isTracking = false;
+        // 초기 상태 설정
+        if (arFaceManager != null)
+        {
+            arFaceManager.enabled = isTracking;
+        }
         if (flowerObject != null)
         {
-            Destroy(flowerObject);
+           Destroy(flowerObject);
         }
 
         // 모든 폭포 제거
@@ -244,11 +253,7 @@ public class NumberController : MonoBehaviour
         if (flameThrower != null) flameThrower.SetActive(false);
         if (pointCloudManager != null) pointCloudManager.SetActive(false);
         if (lightObject != null) lightObject.SetActive(false);
-        // 초기 상태 설정
-        if (arFaceManager != null)
-        {
-            arFaceManager.enabled = isFaceTrackingEnabled;
-        }
+        
         //if (arFaceManagerObject != null) arFaceManagerObject.SetActive(false);
 
         // 파란색 오브젝트 생성 코루틴 중지
