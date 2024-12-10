@@ -184,12 +184,20 @@ public class NumberController : MonoBehaviour
         DisableAll();
 
         // 3번 버튼을 누르면 파란색 오브젝트 생성 코루틴 시작
-        if (generateObjectsCoroutine == null)
+        /*f (generateObjectsCoroutine == null)
         {
             generateObjectsCoroutine = StartCoroutine(GenerateGlowingObjectsAroundCamera());
         }
         button3.interactable = false;
 
+        text3.SetActive(true);*/
+        if(pointCloudManager != null)
+        {
+            pointCloudManager.SetActive(true);
+            generateObjectsCoroutine=StartCoroutine(GenerateObjectsBasedOnPointCloud());
+
+        }
+        button3.interactable = false;
         text3.SetActive(true);
     }
 
@@ -263,7 +271,7 @@ public class NumberController : MonoBehaviour
             generateObjectsCoroutine = null;
         }
     }
-
+    /*
     IEnumerator GenerateGlowingObjectsAroundCamera()
     {
         while (true)
@@ -278,10 +286,73 @@ public class NumberController : MonoBehaviour
             // 주기적으로 체크
             yield return new WaitForSeconds(checkInterval);
         }
-    }
- 
+    }*/
+    IEnumerator GenerateObjectsBasedOnPointCloud()
+    {
+        float minimumDistance = 0.5f; // 최소 거리 조건
 
-        public void SpawnWaterfall(Vector3 position, GameObject glowingObject)
+        while (true)
+        {
+            // pointCloudManager가 ARPointCloudManager를 포함하고 있는지 확인
+            if (pointCloudManager.TryGetComponent(out ARPointCloudManager pointCloudManagerComponent))
+            {
+                // pointCloudManager의 trackables에서 각 ARPointCloud 처리
+                foreach (ARPointCloud pointCloud in pointCloudManagerComponent.trackables)
+                {
+                    // 포인트 클라우드 데이터 가져오기
+                    if (pointCloud.positions.HasValue)
+                    {
+                        var positions = new List<Vector3>();
+                        // NativeArray<Vector3> 데이터를 List<Vector3>로 변환
+                        foreach (var position in pointCloud.positions.Value)
+                        {
+                            positions.Add(position);
+                        }
+
+                        // 최소 8개의 점이 있는 경우 처리
+                        if (positions.Count >= 8)
+                        {
+                            Vector3 clusterCenter = Vector3.zero;
+
+                            // 중심 위치 계산
+                            foreach (var position in positions)
+                            {
+                                clusterCenter += position;
+                            }
+                            clusterCenter /= positions.Count;
+
+                            // 기존 오브젝트와의 거리 확인
+                            bool tooClose = false;
+                            foreach (var obj in glowingObjects)
+                            {
+                                if (Vector3.Distance(obj.transform.position, clusterCenter) < minimumDistance)
+                                {
+                                    tooClose = true;
+                                    break;
+                                }
+                            }
+
+                            // 너무 가까운 경우 생성을 건너뜀
+                            if (tooClose)
+                            {
+                                continue;
+                            }
+
+                            // 생성 위치에 오브젝트를 생성
+                            GameObject glowingObject = Instantiate(glowingObjectPrefab, clusterCenter, Quaternion.identity);
+                            glowingObjects.Add(glowingObject);
+                            glowingObject.AddComponent<GlowingObjectInteraction>().Initialize(this); // 클릭 이벤트 추가
+                        }
+                    }
+                }
+            }
+
+            // 체크 주기
+            yield return new WaitForSeconds(checkInterval);
+        }
+    }
+
+    public void SpawnWaterfall(Vector3 position, GameObject glowingObject)
     {
         // 폭포 생성
         GameObject waterfall = Instantiate(waterfallPrefab, position, Quaternion.identity);

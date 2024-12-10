@@ -9,7 +9,7 @@ public class GlowingObjectInteraction : MonoBehaviour
         numberController = controller;
     }
 
-    void OnMouseDown()
+    private void OnMouseDown()
     {
         if (numberController != null)
         {
